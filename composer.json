@@ -1,0 +1,26 @@
+{
+    "name": "neam/yii-permalinkable-items-core",
+    "description": "Core helper extension to implement routes that makes items permalinkable.",
+    "keywords": ["yii"],
+    "homepage": "https://github.com/neam/yii-permalinkable-items-core",
+    "type": "yii-extension",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Fredrik Wollsén",
+            "email": "fredrik@neam.se"
+        }
+    ],
+    "repositories": [],
+    "autoload": {
+        "psr-4": {
+            "neam\\yii_permalinkable_items_core\\": ""
+        }
+    },
+    "require": {
+        "php": ">=5.4.0",
+        "yiisoft/yii": ">=1.1.0"
+    },
+    "require-dev": {
+    }
+}
