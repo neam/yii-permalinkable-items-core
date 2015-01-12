@@ -2,6 +2,8 @@
 
 namespace neam\yii_permalinkable_items_core\behaviors;
 
+use Exception;
+
 /**
  * PermalinkableItemBehavior
  *
@@ -9,7 +11,7 @@ namespace neam\yii_permalinkable_items_core\behaviors;
  * @license BSD-3-Clause
  * @author See https://github.com/neam/yii-permalinkable-items-core/graphs/contributors
  */
-class PermalinkableItemBehavior extends CActiveRecordBehavior
+class PermalinkableItemBehavior extends \CActiveRecordBehavior
 {
 
     /**
@@ -19,7 +21,7 @@ class PermalinkableItemBehavior extends CActiveRecordBehavior
     public function attach($owner)
     {
         parent::attach($owner);
-        if (!($owner instanceof CActiveRecord)) {
+        if (!($owner instanceof \CActiveRecord)) {
             throw new Exception('Owner must be a CActiveRecord class');
         }
     }
