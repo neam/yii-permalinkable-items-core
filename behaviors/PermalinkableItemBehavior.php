@@ -33,6 +33,13 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
     }
 
+    public function addTrailingSlashEquivalent($route)
+    {
+        $return = clone $route;
+        $return->route .= "/";
+        return $return;
+    }
+
     /**
      * A. the node id of the first version of this item
      * B. the current semantic route based on current attribute values
@@ -51,10 +58,11 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
         $routes = array();
 
         $route = new Route;
-        $route->route = "/{$this->owner->node()->id}/";
+        $route->route = "/{$this->owner->node()->id}";
         $route->route_type_id = $routeType->id;
 
         $routes[] = $route;
+        $routes[] = $this->addTrailingSlashEquivalent($route);
 
         // B. the current semantic route based on current attribute values
 
@@ -75,6 +83,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
             $route->route_type_id = $routeType->id;
 
             $routes[] = $route;
+            $routes[] = $this->addTrailingSlashEquivalent($route);
 
         }
 
@@ -87,7 +96,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
         if (empty($this->owner->slug_en)) {
             throw new \neam\yii_permalinkable_items_core\exceptions\SemanticRouteException("Item with node id $this->owner->node()->id has no english slug defined");
         }
-        return "/{$this->owner->slug_en}/";
+        return "/{$this->owner->slug_en}";
     }
 
     public $suggestedUpdatesLog = null;
