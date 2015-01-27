@@ -33,7 +33,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
     }
 
-    public function addTrailingSlashEquivalent($route)
+    public function trailingSlashEquivalent($route)
     {
         $return = clone $route;
         $return->route .= "/";
@@ -62,7 +62,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
         $route->route_type_id = $routeType->id;
 
         $routes[] = $route;
-        $routes[] = $this->addTrailingSlashEquivalent($route);
+        $routes[] = $this->trailingSlashEquivalent($route);
 
         // B. the current semantic route based on current attribute values
 
@@ -83,7 +83,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
             $route->route_type_id = $routeType->id;
 
             $routes[] = $route;
-            $routes[] = $this->addTrailingSlashEquivalent($route);
+            $routes[] = $this->trailingSlashEquivalent($route);
 
         }
 
