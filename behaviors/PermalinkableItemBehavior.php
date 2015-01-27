@@ -5,6 +5,8 @@ namespace neam\yii_permalinkable_items_core\behaviors;
 use Exception;
 use Route;
 use RouteType;
+use LanguageHelper;
+use Yii;
 
 /**
  * PermalinkableItemBehavior
@@ -51,6 +53,13 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
     public function suggestedRoutes()
     {
 
+        // Make sure we use the "edited" flavor of the item when we determine semantic routes so that language fallback contents are inactivated
+
+        $owner = $this->owner;
+        if ($this->owner->asa('i18n-attribute-messages') !== null) {
+            $owner = $this->owner->edited();
+        }
+
         // A. the node id of the first version of this item
 
         $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::ITEM));
@@ -58,21 +67,26 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
         $routes = array();
 
         $route = new Route;
-        $route->route = "/{$this->owner->node()->id}";
+        $route->route = "/{$owner->node()->id}";
         $route->route_type_id = $routeType->id;
 
-        $routes[] = $route;
-        $routes[] = $this->trailingSlashEquivalent($route);
+        $routes["node-id-route"] = $route;
+        $routes["node-id-route-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+        // Switch to the model's source language - the semantic route will be supplied in this language
+
+        $_language = Yii::app()->language;
+        Yii::app()->language = $owner->source_language;
 
         // B. the current semantic route based on current attribute values
 
-        if (!empty($this->owner->slug_en)) {
+        if (!empty($owner->slug_en)) {
 
             $route = new Route;
 
             // Use owner item's semanticRoute() to determine semanticRoute, fallback on this behavior's defaultSemanticRoute if not available
             //try {
-            $route->route = $this->owner->semanticRoute();
+            $route->route = $owner->semanticRoute();
             //} catch (\CException $e) {
             //    if (strpos($e->getMessage(), "and its behaviors do not have a method or closure named") !== false) {
             //        $route->route = $this->defaultSemanticRoute();
@@ -82,8 +96,53 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
             //}
             $route->route_type_id = $routeType->id;
 
-            $routes[] = $route;
-            $routes[] = $this->trailingSlashEquivalent($route);
+            $routes["semantic-route"] = $route;
+            $routes["semantic-route-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+        }
+
+        // Switch back to ordinary application language
+
+        Yii::app()->language = $_language;
+
+        // C. previous and later versions' routes
+
+        // TODO
+
+        // D. translation routes (node-id and semantic)
+
+        $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::TRANSLATION));
+
+        foreach (LanguageHelper::getLanguageList() as $code => $label) {
+
+            $route = new Route;
+            $route->route = "/" . str_replace("_", "-", $code) . $routes["node-id-route"]->route;
+            $route->route_type_id = $routeType->id;
+            $route->translation_route_language = $code;
+
+            $routes["node-id-translation-route-{$code}"] = $route;
+            $routes["node-id-translation-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+            // Skip semantic route for source language since it is already suggested above
+
+            if ($code === $owner->source_language) {
+                continue;
+            }
+
+            // Switch to the current language - the translated semantic route will be supplied in this language
+            Yii::app()->language = $code;
+
+            if (!empty($owner->slug)) {
+
+                $owner->semanticRoute();
+                $route = new Route;
+                $route->route = $owner->semanticRoute();
+                $route->route_type_id = $routeType->id;
+
+                $routes["semantic-translation-route-{$code}"] = $route;
+                $routes["semantic-translation-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+            }
 
         }
 
