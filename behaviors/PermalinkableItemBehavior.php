@@ -276,15 +276,11 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
             $existingRoute = Route::model()->findByAttributes($attributes);
             if (!empty($existingRoute)) {
                 if ($existingRoute->node_id == $this->owner->node_id) {
-                    // already belongs to current item - update suggested attributes
-                    $existingRoute->route_type_id = $suggestedRoute->route_type_id;
-                    $existingRoute->file_route_attribute_ref = $suggestedRoute->file_route_attribute_ref;
-                    $existingRoute->translation_route_language = $suggestedRoute->translation_route_language;
+                    // already belongs to current item - we do nothing and keep it as it is
                 } else {
                     // belongs to another item - add to current item instead
-                    $this->suggestedUpdatesLog[] = "Route '$existingRoute->route' which belonged to item {$existingRoute->node_id} will be removed from that item and attached to this item instead";
-                    $existingRoute->node_id = $this->owner->node_id;
-                    $suggestedUpdatedRoutes[] = $existingRoute;
+                    $this->suggestedUpdatesLog[] = "$routeClass '$existingRoute->route' which belonged to item {$existingRoute->node_id} will be removed from that item and attached to this item instead";
+                    $suggestedUpdatedRoutes[] = $suggestedRoute;
                 }
             } else {
                 // If not exists, add as suggested updated route
