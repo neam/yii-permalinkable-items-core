@@ -28,7 +28,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
      * List of attributes for which file routes should be suggested
      * @var array
      */
-    public $file_route_attributes = array();
+    public $fileRouteAttributeRefs = array();
 
     /**
      * List of route type refs for which routes should be suggested
@@ -141,9 +141,9 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
             if (empty($rts) || in_array(RouteType::FILE_SEMANTIC, $rts)) {
 
-                if (!empty($this->file_route_attributes)) {
+                if (!empty($this->fileRouteAttributeRefs)) {
 
-                    foreach ($this->file_route_attributes as $file_route_attribute) {
+                    foreach ($this->fileRouteAttributeRefs as $file_route_attribute) {
 
                         $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::FILE_SEMANTIC));
                         $route = new Route;
@@ -211,9 +211,9 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
                 if (empty($rts) || in_array(RouteType::I18N_FILE_SEMANTIC, $rts)) {
 
-                    if (!empty($this->file_route_attributes)) {
+                    if (!empty($this->fileRouteAttributeRefs)) {
 
-                        foreach ($this->file_route_attributes as $file_route_attribute) {
+                        foreach ($this->fileRouteAttributeRefs as $file_route_attribute) {
 
                             $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_FILE_SEMANTIC));
                             $route = new Route;
