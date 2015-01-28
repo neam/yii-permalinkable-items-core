@@ -138,6 +138,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
                 $route = new Route;
                 $route->route = $owner->semanticRoute();
                 $route->route_type_id = $routeType->id;
+                $route->translation_route_language = $code;
 
                 $routes["semantic-translation-route-{$code}"] = $route;
                 $routes["semantic-translation-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
