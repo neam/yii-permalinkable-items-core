@@ -45,10 +45,10 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
     /**
      * A. the node id of the first version of this item
      * B. the current semantic route based on current attribute values
-     * C. upon publishing: previous versions' routes
-     * D. translation routes
-     * E. file routes
-     * F. file translation routes
+     * C. file routes
+     * D. translation node id routes
+     * E. translation semantic routes
+     * F. translation file routes
      */
     public function suggestedRoutes()
     {
@@ -59,6 +59,10 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
         if ($this->owner->asa('i18n-attribute-messages') !== null) {
             $owner = $this->owner->edited();
         }
+
+        // Store the current display language
+
+        $_language = Yii::app()->language;
 
         // A. the node id of the first version of this item
 
@@ -75,12 +79,11 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         // Switch to the model's source language - the semantic route will be supplied in this language
 
-        $_language = Yii::app()->language;
         Yii::app()->language = $owner->source_language;
 
-        // B. the current semantic route based on current attribute values
-
         if (!empty($owner->slug_en)) {
+
+            // B. the current semantic route based on current attribute values
 
             $route = new Route;
 
@@ -99,29 +102,31 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
             $routes["semantic-route"] = $route;
             $routes["semantic-route-trailing-slash"] = $this->trailingSlashEquivalent($route);
 
+            // C. file routes
+
+            // $routes["file-route-{}"]
+
         }
 
         // Switch back to ordinary application language
 
         Yii::app()->language = $_language;
 
-        // C. previous and later versions' routes
-
-        // TODO
-
-        // D. translation routes (node-id and semantic)
+        // translation routes
 
         $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::TRANSLATION));
 
         foreach (LanguageHelper::getLanguageList() as $code => $label) {
+
+            // D. translation node id routes
 
             $route = new Route;
             $route->route = "/" . str_replace("_", "-", $code) . $routes["node-id-route"]->route;
             $route->route_type_id = $routeType->id;
             $route->translation_route_language = $code;
 
-            $routes["node-id-translation-route-{$code}"] = $route;
-            $routes["node-id-translation-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+            $routes["translation-node-id-route-{$code}"] = $route;
+            $routes["translation-node-id-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
 
             // Skip semantic route for source language since it is already suggested above
 
@@ -130,7 +135,10 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
             }
 
             // Switch to the current language - the translated semantic route will be supplied in this language
+
             Yii::app()->language = $code;
+
+            // E. translation semantic routes
 
             if (!empty($owner->slug)) {
 
@@ -140,12 +148,20 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
                 $route->route_type_id = $routeType->id;
                 $route->translation_route_language = $code;
 
-                $routes["semantic-translation-route-{$code}"] = $route;
-                $routes["semantic-translation-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+                $routes["translation-semantic-route-{$code}"] = $route;
+                $routes["translation-semantic-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+                // F. translation file routes
+
+                // $routes["translation-file-route-{}"]
 
             }
 
         }
+
+        // Switch back to ordinary application language
+
+        Yii::app()->language = $_language;
 
         return $routes;
 
