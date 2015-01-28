@@ -19,6 +19,18 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 {
 
     /**
+     * The routes relation attribute
+     * @var string
+     */
+    public $relation = null;
+
+    /**
+     * List of attributes for which file routes should be suggested
+     * @var array
+     */
+    public $file_route_attributes = array();
+
+    /**
      * @param CActiveRecord $owner
      * @throws Exception
      */
@@ -35,20 +47,32 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
     }
 
-    public function trailingSlashEquivalent($route)
+    public function trailingSlashEquivalent(Route $route)
+    {
+        return $this->paddedEquivalent($route, "", "/");
+    }
+
+    public function paddedEquivalent(Route $route, $prefix, $suffix)
     {
         $return = clone $route;
-        $return->route .= "/";
+        $return->route = $prefix . $return->route . $suffix;
         return $return;
     }
 
     /**
-     * A. the node id of the first version of this item
-     * B. the current semantic route based on current attribute values
-     * C. file routes
-     * D. translation node id routes
-     * E. translation semantic routes
-     * F. translation file routes
+     * Suggests route, route_type_id, file_route_attribute_ref and translation_route_language for the following route types
+     *
+     * SHORT = 'short';
+     * SEMANTIC = 'semantic';
+     * FILE_SEMANTIC = 'file_semantic';
+     * I18N_SHORT = 'i18n_short';
+     * I18N_SEMANTIC = 'i18n_semantic';
+     * I18N_FILE_SEMANTIC = 'i18n_file_semantic';
+     *
+     * Not in use:
+     *
+     * FILE_SHORT = 'file_short';
+     * I18N_FILE_SHORT = 'i18n_file_short';
      */
     public function suggestedRoutes()
     {
@@ -64,9 +88,9 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         $_language = Yii::app()->language;
 
-        // A. the node id of the first version of this item
+        // RouteType::SHORT (TODO: the node id of the first version of this item)
 
-        $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::ITEM));
+        $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::SHORT));
 
         $routes = array();
 
@@ -74,8 +98,8 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
         $route->route = "/{$owner->node()->id}";
         $route->route_type_id = $routeType->id;
 
-        $routes["node-id-route"] = $route;
-        $routes["node-id-route-trailing-slash"] = $this->trailingSlashEquivalent($route);
+        $routes[RouteType::SHORT] = $route;
+        $routes[RouteType::SHORT . "-trailing-slash"] = $this->trailingSlashEquivalent($route);
 
         // Switch to the model's source language - the semantic route will be supplied in this language
 
@@ -83,28 +107,35 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         if (!empty($owner->slug_en)) {
 
-            // B. the current semantic route based on current attribute values
+            // RouteType::SEMANTIC - the current semantic route based on current attribute values
 
+            $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::SEMANTIC));
             $route = new Route;
 
-            // Use owner item's semanticRoute() to determine semanticRoute, fallback on this behavior's defaultSemanticRoute if not available
-            //try {
+            // Use owner item's semanticRoute() to determine semanticRoute
             $route->route = $owner->semanticRoute();
-            //} catch (\CException $e) {
-            //    if (strpos($e->getMessage(), "and its behaviors do not have a method or closure named") !== false) {
-            //        $route->route = $this->defaultSemanticRoute();
-            //    } else {
-            //        throw $e;
-            //    }
-            //}
             $route->route_type_id = $routeType->id;
 
-            $routes["semantic-route"] = $route;
-            $routes["semantic-route-trailing-slash"] = $this->trailingSlashEquivalent($route);
+            $routes[RouteType::SEMANTIC] = $route;
+            $routes[RouteType::SEMANTIC . "-trailing-slash"] = $this->trailingSlashEquivalent($route);
 
-            // C. file routes
+            // RouteType::FILE_SEMANTIC - the current semantic file route
 
-            // $routes["file-route-{}"]
+            if (!empty($this->file_route_attributes)) {
+
+                foreach ($this->file_route_attributes as $file_route_attribute) {
+
+                    $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::FILE_SEMANTIC));
+                    $route = new Route;
+                    $route->route = $owner->semanticFileRoute($file_route_attribute);
+                    $route->route_type_id = $routeType->id;
+                    $route->file_route_attribute_ref = $file_route_attribute;
+
+                    $routes[RouteType::FILE_SEMANTIC . "-$file_route_attribute"] = $route;
+
+                }
+
+            }
 
         }
 
@@ -114,19 +145,20 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         // translation routes
 
-        $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::TRANSLATION));
-
         foreach (LanguageHelper::getLanguageList() as $code => $label) {
 
-            // D. translation node id routes
+            $lang = str_replace("_", "-", $code);
 
+            // RouteType::I18N_SHORT
+
+            $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_SHORT));
             $route = new Route;
-            $route->route = "/" . str_replace("_", "-", $code) . $routes["node-id-route"]->route;
+            $route->route = "/$lang" . $routes[RouteType::SHORT]->route;
             $route->route_type_id = $routeType->id;
             $route->translation_route_language = $code;
 
-            $routes["translation-node-id-route-{$code}"] = $route;
-            $routes["translation-node-id-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+            $routes[RouteType::I18N_SHORT . "-{$code}"] = $route;
+            $routes[RouteType::I18N_SHORT . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
 
             // Skip semantic route for source language since it is already suggested above
 
@@ -138,22 +170,37 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
             Yii::app()->language = $code;
 
-            // E. translation semantic routes
-
             if (!empty($owner->slug)) {
 
-                $owner->semanticRoute();
+                // RouteType::I18N_SEMANTIC
+
+                $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_SEMANTIC));
                 $route = new Route;
                 $route->route = $owner->semanticRoute();
                 $route->route_type_id = $routeType->id;
                 $route->translation_route_language = $code;
 
-                $routes["translation-semantic-route-{$code}"] = $route;
-                $routes["translation-semantic-route-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+                $routes[RouteType::I18N_SEMANTIC . "-{$code}"] = $route;
+                $routes[RouteType::I18N_SEMANTIC . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
 
-                // F. translation file routes
+                // RouteType::I18N_FILE_SEMANTIC
 
-                // $routes["translation-file-route-{}"]
+                if (!empty($this->file_route_attributes)) {
+
+                    foreach ($this->file_route_attributes as $file_route_attribute) {
+
+                        $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_FILE_SEMANTIC));
+                        $route = new Route;
+                        $route->route = $owner->semanticFileRoute($file_route_attribute, $lang);
+                        $route->route_type_id = $routeType->id;
+                        $route->file_route_attribute_ref = $file_route_attribute;
+                        $route->translation_route_language = $code;
+
+                        $routes[RouteType::I18N_FILE_SEMANTIC . "-$file_route_attribute-$code"] = $route;
+
+                    }
+
+                }
 
             }
 
@@ -183,20 +230,22 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
     public function suggestedUpdatedRoutes()
     {
         $this->suggestedUpdatesLog = array();
-        $currentRoutes = $this->owner->routes;
+        $currentRoutes = $this->owner->{$this->relation};
         $suggestedRoutes = $this->suggestedRoutes();
         $suggestedUpdatedRoutes = $currentRoutes;
         foreach ($suggestedRoutes as $suggestedRoute) {
 
             // If already exists, check if belongs to this or not
             $attributes = array(
-                'route' => $suggestedRoute->route,
-                'route_type_id' => $suggestedRoute->route_type_id
+                'route' => $suggestedRoute->route
             );
             $existingRoute = Route::model()->findByAttributes($attributes);
             if (!empty($existingRoute)) {
                 if ($existingRoute->node_id == $this->owner->node_id) {
-                    // already belongs to current item - do nothing
+                    // already belongs to current item - update suggested attributes
+                    $existingRoute->route_type_id = $suggestedRoute->route_type_id;
+                    $existingRoute->file_route_attribute_ref = $suggestedRoute->file_route_attribute_ref;
+                    $existingRoute->translation_route_language = $suggestedRoute->translation_route_language;
                 } else {
                     // belongs to another item - add to current item instead
                     $this->suggestedUpdatesLog[] = "Route '$existingRoute->route' which belonged to item {$existingRoute->node_id} will be removed from that item and attached to this item instead";
@@ -221,7 +270,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
     {
         echo '<pre>';
         echo "routes:\n\n";
-        print_r(\neam\util\U::arAttributes($this->owner->routes));
+        print_r(\neam\util\U::arAttributes($this->owner->{$this->relation}));
         echo "suggestedRoutes():\n\n";
         print_r(\neam\util\U::arAttributes($this->owner->suggestedRoutes()));
         echo "suggestedUpdatedRoutes():\n\n";
