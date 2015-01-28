@@ -183,13 +183,13 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
                     // already belongs to current item - do nothing
                 } else {
                     // belongs to another item - add to current item instead
-                    $this->suggestedUpdatesLog[] = "Route '$existingRoute->route' which belonged to item {$existingRoute->node_id} is removed from that item and attached to this item instead";
+                    $this->suggestedUpdatesLog[] = "Route '$existingRoute->route' which belonged to item {$existingRoute->node_id} will be removed from that item and attached to this item instead";
                     $existingRoute->node_id = $this->owner->node_id;
                     $suggestedUpdatedRoutes[] = $existingRoute;
                 }
             } else {
                 // If not exists, add as suggested updated route
-                $this->suggestedUpdatesLog[] = "Route '$suggestedRoute->route' is added and attached to this item";
+                $this->suggestedUpdatesLog[] = "Route '$suggestedRoute->route' will be added and attached to this item";
                 $suggestedUpdatedRoutes[] = $suggestedRoute;
             }
         }
