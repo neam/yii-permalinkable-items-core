@@ -186,6 +186,12 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
             }
 
+            // Skip semantic route for source language since it is already suggested above
+
+            if ($code === $owner->source_language) {
+                continue;
+            }
+
             // Switch to the current language - the translated semantic route will be supplied in this language
 
             Yii::app()->language = $code;
