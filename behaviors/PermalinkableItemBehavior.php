@@ -31,6 +31,13 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
     public $file_route_attributes = array();
 
     /**
+     * List of route type refs for which routes should be suggested
+     * If left empty, all routes will be suggested
+     * @var array
+     */
+    public $routeTypeRefs = null;
+
+    /**
      * @param CActiveRecord $owner
      * @throws Exception
      */
@@ -76,6 +83,9 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
      */
     public function suggestedRoutes()
     {
+        // Shorthand reference
+
+        $rts =& $this->routeTypeRefs;
 
         // Make sure we use the "edited" flavor of the item when we determine semantic routes so that language fallback contents are inactivated
 
@@ -90,16 +100,20 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         // RouteType::SHORT (TODO: the node id of the first version of this item)
 
-        $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::SHORT));
+        if (empty($rts) || in_array(RouteType::SHORT, $rts)) {
 
-        $routes = array();
+            $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::SHORT));
 
-        $route = new Route;
-        $route->route = "/{$owner->node()->id}";
-        $route->route_type_id = $routeType->id;
+            $routes = array();
 
-        $routes[RouteType::SHORT] = $route;
-        $routes[RouteType::SHORT . "-trailing-slash"] = $this->trailingSlashEquivalent($route);
+            $route = new Route;
+            $route->route = "/{$owner->node()->id}";
+            $route->route_type_id = $routeType->id;
+
+            $routes[RouteType::SHORT] = $route;
+            $routes[RouteType::SHORT . "-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+        }
 
         // Switch to the model's source language - the semantic route will be supplied in this language
 
@@ -109,33 +123,41 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
             // RouteType::SEMANTIC - the current semantic route based on current attribute values
 
-            $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::SEMANTIC));
-            $route = new Route;
+            if (empty($rts) || in_array(RouteType::SEMANTIC, $rts)) {
 
-            // Use owner item's semanticRoute() to determine semanticRoute
-            $route->route = $owner->semanticRoute();
-            $route->route_type_id = $routeType->id;
+                $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::SEMANTIC));
+                $route = new Route;
 
-            $routes[RouteType::SEMANTIC] = $route;
-            $routes[RouteType::SEMANTIC . "-trailing-slash"] = $this->trailingSlashEquivalent($route);
+                // Use owner item's semanticRoute() to determine semanticRoute
+                $route->route = $owner->semanticRoute();
+                $route->route_type_id = $routeType->id;
+
+                $routes[RouteType::SEMANTIC] = $route;
+                $routes[RouteType::SEMANTIC . "-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+            }
 
             // RouteType::FILE_SEMANTIC - the current semantic file route
 
-            if (!empty($this->file_route_attributes)) {
+            if (empty($rts) || in_array(RouteType::FILE_SEMANTIC, $rts)) {
 
-                foreach ($this->file_route_attributes as $file_route_attribute) {
+                if (!empty($this->file_route_attributes)) {
 
-                    $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::FILE_SEMANTIC));
-                    $route = new Route;
-                    $route->route = $owner->semanticFileRoute($file_route_attribute);
-                    $route->route_type_id = $routeType->id;
-                    $route->file_route_attribute_ref = $file_route_attribute;
+                    foreach ($this->file_route_attributes as $file_route_attribute) {
 
-                    $routes[RouteType::FILE_SEMANTIC . "-$file_route_attribute"] = $route;
+                        $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::FILE_SEMANTIC));
+                        $route = new Route;
+                        $route->route = $owner->semanticFileRoute($file_route_attribute);
+                        $route->route_type_id = $routeType->id;
+                        $route->file_route_attribute_ref = $file_route_attribute;
+
+                        $routes[RouteType::FILE_SEMANTIC . "-$file_route_attribute"] = $route;
+
+                    }
 
                 }
-
             }
+
 
         }
 
@@ -151,14 +173,18 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
             // RouteType::I18N_SHORT
 
-            $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_SHORT));
-            $route = new Route;
-            $route->route = "/$lang" . $routes[RouteType::SHORT]->route;
-            $route->route_type_id = $routeType->id;
-            $route->translation_route_language = $code;
+            if (empty($rts) || in_array(RouteType::I18N_SHORT, $rts)) {
 
-            $routes[RouteType::I18N_SHORT . "-{$code}"] = $route;
-            $routes[RouteType::I18N_SHORT . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+                $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_SHORT));
+                $route = new Route;
+                $route->route = "/$lang" . $routes[RouteType::SHORT]->route;
+                $route->route_type_id = $routeType->id;
+                $route->translation_route_language = $code;
+
+                $routes[RouteType::I18N_SHORT . "-{$code}"] = $route;
+                $routes[RouteType::I18N_SHORT . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+            }
 
             // Skip semantic route for source language since it is already suggested above
 
@@ -174,29 +200,37 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
                 // RouteType::I18N_SEMANTIC
 
-                $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_SEMANTIC));
-                $route = new Route;
-                $route->route = $owner->semanticRoute();
-                $route->route_type_id = $routeType->id;
-                $route->translation_route_language = $code;
+                if (empty($rts) || in_array(RouteType::I18N_SEMANTIC, $rts)) {
 
-                $routes[RouteType::I18N_SEMANTIC . "-{$code}"] = $route;
-                $routes[RouteType::I18N_SEMANTIC . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+                    $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_SEMANTIC));
+                    $route = new Route;
+                    $route->route = $owner->semanticRoute();
+                    $route->route_type_id = $routeType->id;
+                    $route->translation_route_language = $code;
+
+                    $routes[RouteType::I18N_SEMANTIC . "-{$code}"] = $route;
+                    $routes[RouteType::I18N_SEMANTIC . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
+
+                }
 
                 // RouteType::I18N_FILE_SEMANTIC
 
-                if (!empty($this->file_route_attributes)) {
+                if (empty($rts) || in_array(RouteType::I18N_FILE_SEMANTIC, $rts)) {
 
-                    foreach ($this->file_route_attributes as $file_route_attribute) {
+                    if (!empty($this->file_route_attributes)) {
 
-                        $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_FILE_SEMANTIC));
-                        $route = new Route;
-                        $route->route = $owner->semanticFileRoute($file_route_attribute, $lang);
-                        $route->route_type_id = $routeType->id;
-                        $route->file_route_attribute_ref = $file_route_attribute;
-                        $route->translation_route_language = $code;
+                        foreach ($this->file_route_attributes as $file_route_attribute) {
 
-                        $routes[RouteType::I18N_FILE_SEMANTIC . "-$file_route_attribute-$code"] = $route;
+                            $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_FILE_SEMANTIC));
+                            $route = new Route;
+                            $route->route = $owner->semanticFileRoute($file_route_attribute, $lang);
+                            $route->route_type_id = $routeType->id;
+                            $route->file_route_attribute_ref = $file_route_attribute;
+                            $route->translation_route_language = $code;
+
+                            $routes[RouteType::I18N_FILE_SEMANTIC . "-$file_route_attribute-$code"] = $route;
+
+                        }
 
                     }
 
