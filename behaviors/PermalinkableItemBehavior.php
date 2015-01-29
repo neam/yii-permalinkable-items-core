@@ -125,6 +125,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
             } catch (SemanticRouteException $e) {
                 Yii::log('SemanticRouteException: ' . $e->getMessage(), 'warning', __METHOD__);
+                throw $e;
             }
 
         }
@@ -147,6 +148,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
                 } catch (SemanticRouteException $e) {
                     Yii::log('SemanticRouteException: ' . $e->getMessage(), 'warning', __METHOD__);
+                    throw $e;
                 }
 
             }
@@ -167,20 +169,14 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
             if ($this->routeClass == "Route") {
 
-                try {
+                $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_SHORT));
+                $route = new Route;
+                $route->route = "/$lang" . $routes[RouteType::SHORT]->route;
+                $route->route_type_id = $routeType->id;
+                $route->translation_route_language = $code;
 
-                    $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::I18N_SHORT));
-                    $route = new Route;
-                    $route->route = "/$lang" . $routes[RouteType::SHORT]->route;
-                    $route->route_type_id = $routeType->id;
-                    $route->translation_route_language = $code;
-
-                    $routes[RouteType::I18N_SHORT . "-{$code}"] = $route;
-                    $routes[RouteType::I18N_SHORT . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
-
-                } catch (SemanticRouteException $e) {
-                    Yii::log('SemanticRouteException: ' . $e->getMessage(), 'warning', __METHOD__);
-                }
+                $routes[RouteType::I18N_SHORT . "-{$code}"] = $route;
+                $routes[RouteType::I18N_SHORT . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
 
             }
 
@@ -204,7 +200,6 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
                     $routes[RouteType::I18N_SEMANTIC . "-{$code}-trailing-slash"] = $this->trailingSlashEquivalent($route);
 
                 } catch (SemanticRouteException $e) {
-
                     Yii::log("SemanticRouteException (lang=" . Yii::app()->language . "): " . $e->getMessage(), 'warning', __METHOD__);
                 }
 
@@ -228,7 +223,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
                         $routes[FileRouteType::I18N_FILE_SEMANTIC . "-$file_route_attribute-$code"] = $route;
 
                     } catch (SemanticRouteException $e) {
-                        Yii::log('SemanticRouteException: ' . $e->getMessage(), 'warning', __METHOD__);
+                        Yii::log('SemanticRouteException (lang=" . Yii::app()->language . "): ' . $e->getMessage(), 'warning', __METHOD__);
                     }
 
                 }
