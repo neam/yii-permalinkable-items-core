@@ -159,7 +159,11 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         Yii::app()->language = $_language;
 
-        // translation routes
+        // Get metadata about multilingual relations
+
+        $multilingualRelations = $this->owner->getMultilingualRelations();
+
+        // Translation routes
 
         foreach (LanguageHelper::getLanguageList() as $code => $label) {
 
@@ -211,13 +215,17 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
                 foreach ($this->fileRouteAttributeRefs as $file_route_attribute) {
 
+                    if (!in_array($file_route_attribute, array_keys($multilingualRelations))) {
+                        continue;
+                    }
+
                     try {
 
                         $routeType = FileRouteType::model()->findByAttributes(array('ref' => FileRouteType::I18N_FILE_SEMANTIC));
                         $route = new FileRoute;
-                        $route->route = $owner->semanticFileRoute($file_route_attribute, $lang);
+                        $route->file_route_attribute_ref = $multilingualRelations[$file_route_attribute][$code];
+                        $route->route = $owner->semanticFileRoute($route->file_route_attribute_ref, $lang);
                         $route->file_route_type_id = $routeType->id;
-                        $route->file_route_attribute_ref = $file_route_attribute;
                         $route->translation_route_language = $code;
 
                         $routes[FileRouteType::I18N_FILE_SEMANTIC . "-$file_route_attribute-$code"] = $route;
