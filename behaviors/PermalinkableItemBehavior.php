@@ -143,6 +143,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
                     $route->route = $owner->semanticFileRoute($file_route_attribute);
                     $route->file_route_type_id = $routeType->id;
                     $route->file_route_attribute_ref = $file_route_attribute;
+                    $route->canonical = 1;
 
                     $routes[FileRouteType::FILE_SEMANTIC . "-$file_route_attribute"] = $route;
 
@@ -227,6 +228,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
                         $route->route = $owner->semanticFileRoute($route->file_route_attribute_ref, $lang);
                         $route->file_route_type_id = $routeType->id;
                         $route->translation_route_language = $code;
+                        $route->canonical = 1;
 
                         $routes[FileRouteType::I18N_FILE_SEMANTIC . "-$file_route_attribute-$code"] = $route;
 
