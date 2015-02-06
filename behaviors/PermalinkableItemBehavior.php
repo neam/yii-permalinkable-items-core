@@ -162,8 +162,10 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         // Get metadata about multilingual relations
 
-        $multilingualRelations = $this->owner->getMultilingualRelations();
-
+        if ($this->routeClass == "FileRoute") {
+            $multilingualRelations = $this->owner->getMultilingualRelations();
+        }
+        
         // Translation routes
 
         foreach (LanguageHelper::getLanguageList() as $code => $label) {
