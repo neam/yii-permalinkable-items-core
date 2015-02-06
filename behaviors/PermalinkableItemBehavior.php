@@ -226,7 +226,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
                         $routeType = FileRouteType::model()->findByAttributes(array('ref' => FileRouteType::I18N_FILE_SEMANTIC));
                         $route = new FileRoute;
-                        $route->file_route_attribute_ref = $multilingualRelations[$file_route_attribute][$code];
+                        $route->file_route_attribute_ref = $multilingualRelations[$file_route_attribute][$code]["relationName"];
                         $route->route = $owner->semanticFileRoute($route->file_route_attribute_ref, $lang);
                         $route->file_route_type_id = $routeType->id;
                         $route->translation_route_language = $code;
