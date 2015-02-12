@@ -28,19 +28,43 @@ trait PermalinkableItemTrait
             return array(
                 'fileRoutes' => array(self::HAS_MANY, 'FileRoute', array('id' => 'node_id'), 'through' => 'node'),
                 'canonicalFileRoutes' => array(self::HAS_MANY, 'FileRoute', array('id' => 'node_id'), 'through' => 'node', 'on' => 'canonical = 1'),
-                'canonicalFileRoute' => array(self::HAS_ONE, 'FileRoute', array('id' => 'node_id'), 'through' => 'node', 'on' => 'canonicalFileRoute.canonical = 1', 'condition' => 'file_route_attribute_ref = :file_route_attribute_ref'),
+                'nonCanonicalFileRoutes' => array(self::HAS_MANY, 'FileRoute', array('id' => 'node_id'), 'through' => 'node', 'on' => 'canonical = 1'),
+                // The following relations are parametrized and can thus only be referenced if the corresponding withRelationName() methods are invoked on the model before findAll()
+                'specificCanonicalFileRoute' => array(self::HAS_ONE, 'FileRoute', array('id' => 'node_id'), 'through' => 'node', 'on' => 'canonical = 1', 'condition' => 'file_route_attribute_ref = :file_route_attribute_ref'),
+                'specificNonCanonicalFileRoutes' => array(self::HAS_MANY, 'FileRoute', array('id' => 'node_id'), 'through' => 'node', 'on' => 'canonical IS NULL', 'condition' => 'file_route_attribute_ref = :file_route_attribute_ref'),
             );
         }
         return array();
     }
 
-    public function withCanonicalFileRoute($file_route_attribute_ref)
+    public function withSpecificCanonicalFileRoute($file_route_attribute_ref)
     {
         $this->getDbCriteria()->mergeWith(array(
-            'with' => 'canonicalFileRoute',
+            'with' => 'specificCanonicalFileRoute',
             'params' => array(':file_route_attribute_ref' => $file_route_attribute_ref)
         ));
         return $this;
+    }
+
+    public function withSpecificNonCanonicalFileRoutes($file_route_attribute_ref)
+    {
+        $this->getDbCriteria()->mergeWith(array(
+            'with' => 'specificNonCanonicalFileRoutes',
+            'params' => array(':file_route_attribute_ref' => $file_route_attribute_ref)
+        ));
+        return $this;
+    }
+
+    public function specificCanonicalFileRoute($file_route_attribute_ref)
+    {
+        $item = $this->withSpecificCanonicalFileRoute($file_route_attribute_ref)->findByPk($this->id);
+        return !empty($item) ? $item->specificCanonicalFileRoute : [];
+    }
+
+    public function specificNonCanonicalFileRoutes($file_route_attribute_ref)
+    {
+        $item = $this->withSpecificNonCanonicalFileRoutes($file_route_attribute_ref)->findByPk($this->id);
+        return !empty($item) ? $item->specificNonCanonicalFileRoutes : [];
     }
 
     /**
