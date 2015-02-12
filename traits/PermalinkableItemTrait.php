@@ -89,4 +89,15 @@ trait PermalinkableItemTrait
 
     }
 
+    /**
+     * Return the current public file url (without http(s)://)
+     * @param $file_route_attribute_ref
+     * @return mixed
+     */
+    public function currentPublicFileUrl($file_route_attribute_ref)
+    {
+        $file = $this->{$file_route_attribute_ref};
+        return $file->s3_bucket . $file->s3_path;
+    }
+
 }
