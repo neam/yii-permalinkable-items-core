@@ -98,6 +98,13 @@ trait PermalinkableItemTrait
             }
             */
 
+            // Set redirects to canonical route for corresponding non-canonical routes
+            $correspondingNonCanonicalFileRoutes = $this->specificNonCanonicalFileRoutes($canonicalFileRoute->file_route_attribute_ref);
+            $redirects = array();
+            foreach ($correspondingNonCanonicalFileRoutes as $nonCanonicalFileRoute) {
+                $redirects[$nonCanonicalFileRoute->route] = $resourceManager->saveFile("no-real-contents-redirect-only", $nonCanonicalFileRoute->route, ['WebsiteRedirectLocation' => $filePathS3]);
+            }
+
             // Update P3 Media
             $file->s3_bucket = $resourceManager->bucket;
             $file->s3_path = $filePathS3;
@@ -105,7 +112,7 @@ trait PermalinkableItemTrait
                 throw new \CException("Could not save file metadata");
             }
 
-            $results[$this->currentPublicFileUrl($canonicalFileRoute->file_route_attribute_ref)] = $fileSavedToAmazon;
+            $results[$this->currentPublicFileUrl($canonicalFileRoute->file_route_attribute_ref)] = compact("fileSavedToAmazon", "redirects");
 
         }
 
