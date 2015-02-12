@@ -103,6 +103,12 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         }
 
+        // Get metadata about multilingual relations
+
+        if ($this->routeClass == "FileRoute") {
+            $multilingualRelations = $this->owner->getMultilingualRelations();
+        }
+
         // Switch to the model's source language - the semantic route will be supplied in this language
 
         Yii::app()->language = $owner->source_language;
@@ -136,6 +142,11 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
             foreach ($this->fileRouteAttributeRefs as $file_route_attribute) {
 
+                // If multilingual relation, the file route attribute is a multilingual relation and is handled below
+                if (in_array($file_route_attribute, array_keys($multilingualRelations))) {
+                    continue;
+                }
+
                 try {
 
                     $routeType = FileRouteType::model()->findByAttributes(array('ref' => FileRouteType::FILE_SEMANTIC));
@@ -160,12 +171,6 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
 
         Yii::app()->language = $_language;
 
-        // Get metadata about multilingual relations
-
-        if ($this->routeClass == "FileRoute") {
-            $multilingualRelations = $this->owner->getMultilingualRelations();
-        }
-        
         // Translation routes
 
         foreach (LanguageHelper::getLanguageList() as $code => $label) {
