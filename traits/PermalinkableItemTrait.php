@@ -81,7 +81,7 @@ trait PermalinkableItemTrait
                 throw new \CException("Could not save file metadata");
             }
 
-            $results[$canonicalFileRoute->route] = $fileSavedToAmazon;
+            $results[$this->currentPublicFileUrl($canonicalFileRoute->file_route_attribute_ref)] = $fileSavedToAmazon;
 
         }
 
