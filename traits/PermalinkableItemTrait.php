@@ -17,14 +17,13 @@ trait PermalinkableItemTrait
     public function permalinkableItemRelations()
     {
         $behaviors = $this->behaviors();
-        $config = $behaviors["PermalinkableItemBehavior"];
-        if ($config["routeClass"] == "Route") {
+        if (isset($behaviors["permalinkable-item"])) {
             return array(
                 'routes' => array(self::HAS_MANY, 'Route', array('id' => 'node_id'), 'through' => 'node'),
                 'canonicalRoute' => array(self::HAS_ONE, 'Route', array('id' => 'node_id'), 'through' => 'node', 'on' => 'canonical = 1'),
             );
         }
-        if ($config["routeClass"] == "FileRoute") {
+        if (isset($behaviors["permalinkable-files"])) {
             return array(
                 'fileRoutes' => array(self::HAS_MANY, 'FileRoute', array('id' => 'node_id'), 'through' => 'node'),
                 'canonicalFileRoutes' => array(self::HAS_MANY, 'FileRoute', array('id' => 'node_id'), 'through' => 'node', 'on' => 'canonical = 1'),
