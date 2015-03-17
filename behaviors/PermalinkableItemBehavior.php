@@ -316,6 +316,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
                 } else {
                     // belongs to another item - add to current item instead
                     $this->suggestedUpdatesLog[] = "$routeClass '$existingRoute->route' which belonged to item {$existingRoute->node_id} will be removed from that item and attached to this item instead";
+                    $suggestedRoute->id = $existingRoute->id;
                     $suggestedUpdatedRoutes[] = $suggestedRoute;
                 }
             } else {
