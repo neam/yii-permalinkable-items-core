@@ -95,7 +95,7 @@ class PermalinkableItemBehavior extends \CActiveRecordBehavior
             $routeType = RouteType::model()->findByAttributes(array('ref' => RouteType::SHORT));
 
             $route = new Route;
-            $route->route = "/{$owner->node()->id}";
+            $route->route = "/{$owner->ensureNode()->id}";
             $route->route_type_id = $routeType->id;
 
             $routes[RouteType::SHORT] = $route;
