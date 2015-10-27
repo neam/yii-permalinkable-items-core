@@ -16,7 +16,9 @@ trait PermalinkableItemTrait
      */
     public function permalinkableItemRelations()
     {
-        $behaviors = $this->behaviors();
+        // TODO: Find a way to mark permalinkable-item/files without using behaviors config since it can cause
+        // crashes due to behaviors() being called early in the AR loading process
+        //$behaviors = $this->behaviors();
         if (isset($behaviors["permalinkable-item"])) {
             return array(
                 'routes' => array(self::HAS_MANY, 'Route', array('id' => 'node_id'), 'through' => 'node'),
